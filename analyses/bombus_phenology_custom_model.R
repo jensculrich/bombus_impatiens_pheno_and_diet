@@ -21,11 +21,10 @@ unique_detections_by_species <- df %>%
   slice(1) %>%
   select(species, n)
 
-# how many species are we going to consider? Just the main 4 for now
-n_species = 5
-# keep names in alphabetical order
+# IMPORTANT: enter names in alphabetical order
 species_names <- c("bom_fla", "bom_imp", "bom_mel", "bom_mix", "bom_vos")
-
+# how many species are we going to consider? Just the main 4 for now
+n_species = length(species_names)
 
 df_subset_with_counts <- subset(df, species %in% species_names) %>%
   # let's try looking at just the workers
@@ -96,6 +95,8 @@ sites = as.numeric(as.factor(df$site)) # numeric site names
 n_species <- n_species
 species_names <- species
 species <- as.numeric((df$species_factor))
+years <- as.numeric(as.factor(df$year))
+n_years <- length(unique(years))
 julian_scaled <- df$julian_scaled
 julian_scaled_sq <- df$julian_scaled_sq
 n_survey_events <- N/n_species
@@ -103,6 +104,7 @@ n_survey_events <- N/n_species
 stan_data <- c("N", "y", "n_survey_events",
                "n_sites", "sites",
                "n_species", "species",
+               "n_years", "years",
                "julian_scaled",
                "julian_scaled_sq"
 )
@@ -111,21 +113,19 @@ stan_data <- c("N", "y", "n_survey_events",
 params <- c("beta0",
             "beta_julian",
             "beta_julian_sq",
-            #"mu_beta_julian",
-            #"sigma_beta_julian",
-            #"mu_beta_julian_sq",
-            #"sigma_beta_julian_sq",
             "beta_site",
             "sigma_site",
             "beta_species",
+            "sigma_species",
+            "beta_year",
             "mean_y_rep_species",
             "max_y_rep_species",
             
-            "dispersion"
+            "sigma"
 )
 
 # MCMC settings
-n_iterations <- 500
+n_iterations <- 4000
 n_thin <- 1
 n_burnin <- 0.5*n_iterations
 n_chains <- 4
@@ -137,15 +137,15 @@ n_cores <- n_chains
 inits <- lapply(1:n_chains, function(i)
   
   list(beta0 = runif(1, -1, 1),
-       sigma_site = runif(1, 0, 1)
-       
+       sigma_site = runif(1, 0, 1),
+       sigma_species = runif(1, 0, 1)
   )
 )
 
 ## --------------------------------------------------
 ### Run model
 
-stan_model <- "./analyses/phenology_model_neg_bin.stan"
+stan_model <- "./analyses/final_model_phenology.stan"
 
 ## Call Stan from R
 stan_out <- stan(stan_model,
@@ -206,7 +206,7 @@ W_species <- df %>%
   ungroup() %>%
   select(species_factor, W_mean_species, W_max_species)
 
-stan_fit_first_W_mean <- 27 # which row in the tracked parameters is the first W mean
+stan_fit_first_W_mean <- 28 # which row in the tracked parameters is the first W mean
 
 df_estimates <- data.frame(X = numeric(), 
                            Y = numeric(), 
@@ -235,7 +235,7 @@ end_point  = 0.5 + nrow(df_estimates) + nrow(df_estimates) - 1 #
 
 par(mar = c(9,4,1,2))
 plot(1, type="n",
-     xlim=c(0, n_species - 1 + 0.5), 
+     xlim=c(-0.5, n_species - 1 + 0.5), 
      xlab="",
      xaxt = "n",
      ylim=ylims, 
@@ -267,7 +267,7 @@ for(i in 1:n_species){
 #------------------------------------------------------------------------------
 ## PPC for max detections
 
-stan_fit_first_W_max <- 32 # which row in the tracked parameters is the first W mean
+stan_fit_first_W_max <- 33 # which row in the tracked parameters is the first W mean
 
 df_estimates <- data.frame(X = numeric(), 
                            Y = numeric(), 
@@ -291,13 +291,13 @@ for(i in 1:n_species){
 }
 
 labels=as.vector(W_species$species_factor)
-ylims = c(0, max(W_species$W_max_species) + 5)
-          #(max(df_estimates$upper_95)+5))
+ylims = c(0, #max(W_species$W_max_species) + 5)
+          (max(df_estimates$upper_95)+5))
 end_point  = 0.5 + nrow(df_estimates) + nrow(df_estimates) - 1 #
 
 par(mar = c(9,4,1,2))
 plot(1, type="n",
-     xlim=c(0, n_species - 1 + 0.5), 
+     xlim=c(-0.5, n_species - 1 + 0.5), 
      xlab="",
      xaxt = "n",
      ylim=ylims, 
@@ -325,3 +325,4 @@ for(i in 1:n_species){
   
   points(x=sliced$X, y=W_sliced, pch=1)
 }
+
