@@ -350,7 +350,7 @@ df_estimates_eco$X_eco <- as.factor(df_estimates_eco$X_eco)
    geom_hline(yintercept = 0, lty = "dashed") +
    theme(legend.text=element_text(size=10),
          axis.text.x = element_text(size = 18),
-         axis.text.y = element_text(size = 18, angle=0, vjust=0),
+         axis.text.y = element_text(size = 18, angle=0, vjust=0.5),
          axis.title.x = element_text(size = 18),
          axis.title.y = element_text(size = 18),
          panel.grid.major = element_blank(), panel.grid.minor = element_blank(),

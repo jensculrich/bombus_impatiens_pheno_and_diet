@@ -172,11 +172,7 @@ traceplot(stan_out, pars = c(
 
 # pairs plot
 pairs(stan_out, pars = c(
-  "beta0",
-  "beta_julian",
-  "beta_julian_sq",
-  "sigma_site",
-  "sigma_species"
+  "beta_julian"
 ))
 
 pairs(stan_out, pars = c(
