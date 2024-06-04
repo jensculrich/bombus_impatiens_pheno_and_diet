@@ -80,8 +80,8 @@ View(cbind(1:nrow(fit_summary$summary), fit_summary$summary)) # View to see whic
 
 # get original julian dates back
 pred_length <- 100 # divide the calendar year by some number of days
-lower_date <- 85
-upper_date <- 300
+lower_date <- 80
+upper_date <- 325
 original_julian <- seq(lower_date, upper_date, length.out = pred_length) # reasonable prediction range
 julian_pred <- (original_julian - mean(df$julian)) / sd(df$julian) # unscale the dates
 
@@ -89,6 +89,138 @@ count_mean <- array(dim = c(n_species, pred_length))
 count_lower95 <- array(dim = c(n_species, pred_length))
 count_upper95 <- array(dim = c(n_species, pred_length))
 
+# expected counts
+for(i in 1:n_species){
+  for(j in 1:pred_length){
+    
+    if(i != 1){ # i == n_species is the last species (b. impatiens, ie. the reference level)
+      # compute for a comparison species
+      count_mean[i,j] =
+        exp(
+          # intercept +
+          fit_summary$summary[1,1] +
+            # species differences in overall abundance
+            fit_summary$summary[2+(i-1),1] + 
+            # julian scaled with species effect
+            (fit_summary$summary[6,1]) * julian_pred[j] +
+            # julian scaled squared with species effect
+            (fit_summary$summary[7,1]) * julian_pred[j]^2 #+
+        )
+      
+      count_lower95[i,j] =
+        exp(
+          # intercept +
+          fit_summary$summary[1,4] +
+            # species differences in overall abundance
+            fit_summary$summary[2+(i-1),4] + 
+            # julian scaled with species effect
+            (fit_summary$summary[6,4]) * julian_pred[j] +
+            # julian scaled squared with species effect
+            (fit_summary$summary[7,4]) * julian_pred[j]^2 #+
+        )
+      
+      count_upper95[i,j] =
+        exp(
+          # intercept +
+          fit_summary$summary[1,8] +
+            # species differences in overall abundance
+            fit_summary$summary[2+(i-1),8] + 
+            # julian scaled with species effect
+            (fit_summary$summary[6,8]) * julian_pred[j] +
+            # julian scaled squared with species effect
+            (fit_summary$summary[7,8]) * julian_pred[j]^2 #+
+        )
+      
+    } else { 
+      # else compute for the reference level
+      count_mean[i,j] =
+        exp(
+          # intercept +
+          fit_summary$summary[1,1] +
+            # julian scaled
+            fit_summary$summary[6,1] * julian_pred[j] +
+            # julian scaled squared
+            fit_summary$summary[7,1] * julian_pred[j]^2 
+        )
+      
+      count_lower95[i,j] =
+        exp(
+          # intercept +
+          fit_summary$summary[1,4] +
+            # julian scaled
+            fit_summary$summary[6,4] * julian_pred[j] +
+            # julian scaled squared
+            fit_summary$summary[7,4] * julian_pred[j]^2 
+        )
+      
+      count_upper95[i,j] =
+        exp(
+          # intercept +
+          fit_summary$summary[1,8] +
+            # julian scaled
+            fit_summary$summary[6,8] * julian_pred[j] +
+            # julian scaled squared
+            fit_summary$summary[7,8] * julian_pred[j]^2 
+        )
+    }
+    
+  }
+}
+
+# unite the means and 95% CI's with species number and julian date
+species <- rep(1:n_species, each=pred_length) # species number
+# empty vecs to fill with predictions
+mean <- vector() 
+lower_95 <- vector()
+upper_95 <- vector()
+# fill predictions by species and add sequentially to the vector
+for(i in 1:n_species){
+  mean <- c(mean, count_mean[i,]) 
+  lower_95 <- c(lower_95, count_lower95[i,])
+  upper_95 <- c(upper_95, count_upper95[i,])
+}
+# unite as a dataframe and rename the repped julian dates
+new_df <- as.data.frame(cbind(species, julian_pred, rep(original_julian, n_species),
+                              mean, lower_95, upper_95)) %>%
+  rename_with(.cols = 3, ~"julian") 
+
+library(RColorBrewer)
+my_palette_reduced <- brewer.pal(5, "Blues")
+
+# plot just the expected means (plot p)
+p <- ggplot(data = new_df, aes(julian, mean, fill=as.factor(species))) +
+  geom_line(size=2) +
+  geom_ribbon(aes(
+    ymin=lower_95, ymax=upper_95), alpha=0.8) +
+  xlim(c(lower_date, upper_date)) +
+  ylim(c(0, 20)) +
+  theme_bw() +
+  ylab("abundance per survey \n(with 95% CI)") +
+  xlab("julian date") +
+  scale_fill_manual(name = "Species",
+                    labels=c("B. flavifrons",
+                             "B. melanopygus",
+                             "B. mixtus",
+                             "B. vosnesenskii", 
+                             "B. impatiens"),
+                    values = my_palette_reduced) +
+  theme(legend.position = c(0.15, 0.8),
+        legend.text=element_text(size=10),
+        axis.text.x = element_text(size = 18),
+        axis.text.y = element_text(size = 18, angle=45, vjust=-0.5),
+        axis.title.x = element_text(size = 20),
+        axis.title.y = element_text(size = 20),
+        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+        panel.background = element_blank(), axis.line = element_line(colour = "black"))
+p
+
+
+
+
+
+
+#-----------------------------------------------------------------------
+# old stuff
 # expected counts (for year 2022 at average site)
 for(i in 1:n_species){
   for(j in 1:pred_length){
@@ -99,12 +231,11 @@ for(i in 1:n_species){
             # intercept +
             fit_summary$summary[1,1] +
             # species-specific intercept
-            fit_summary$summary[22+(i-1),1] + 
+            fit_summary$summary[4+(i-1),1] + 
             # species-specific julian date
-            fit_summary$summary[2+(i-1),1] * julian_pred[j] +
+            fit_summary$summary[2,1] * julian_pred[j] +
             # species-specific julian date^2
-            #fit_summary$summary[7+(i-1),1] * julian_pred[j]^2
-            (fit_summary$summary[7+(i-1),1] + fit_summary$summary[28,1]) * julian_pred[j]^2 
+            (fit_summary$summary[3,1]) * julian_pred[j]^2 
         )
       
       count_lower95[i,j] =
@@ -112,12 +243,11 @@ for(i in 1:n_species){
             # intercept +
             fit_summary$summary[1,4] +
             # species-specific intercept
-            fit_summary$summary[22+(i-1),4] + 
+            fit_summary$summary[4+(i-1),4] + 
             # species-specific julian date
-            fit_summary$summary[2+(i-1),4] * julian_pred[j] +
+            fit_summary$summary[2,4] * julian_pred[j] +
             # species-specific julian date^2
-            #fit_summary$summary[7+(i-1),4] * julian_pred[j]^2 
-            (fit_summary$summary[7+(i-1),4] + fit_summary$summary[28,4]) * julian_pred[j]^2 
+            (fit_summary$summary[3,4]) * julian_pred[j]^2 
         )
       
       count_upper95[i,j] =
@@ -125,26 +255,15 @@ for(i in 1:n_species){
             # intercept +
             fit_summary$summary[1,8] +
             # species-specific intercept
-            fit_summary$summary[22+(i-1),8] + 
+            fit_summary$summary[4+(i-1),8] + 
             # species-specific julian date
-            fit_summary$summary[2+(i-1),8] * julian_pred[j] +
+            fit_summary$summary[2,8] * julian_pred[j] +
             # species-specific julian date^2
-            #fit_summary$summary[7+(i-1),8] * julian_pred[j]^2 
-            (fit_summary$summary[7+(i-1),8] + fit_summary$summary[28,8]) * julian_pred[j]^2 
+            (fit_summary$summary[3,8]) * julian_pred[j]^2 
         )
       
   }
 }
-
-
-test <- # intercept +
-  fit_summary$summary[1,1] +
-  # species-specific intercept
-  fit_summary$summary[22+(3-1),1] + 
-  # species-specific julian date
-  fit_summary$summary[2+(3-1),1] * julian_pred[1] +
-  # species-specific julian date^2
-  fit_summary$summary[7+(3-1),1] * julian_pred[1]^2 
 
 # unite the means and 95% CI's with species number and julian date
 species <- rep(1:n_species, each=pred_length) # species number
@@ -196,106 +315,3 @@ p
 
 
 
-
-
-
-
-
-
-
-# old
-df1 <- as.data.frame(cbind((rep(1, pred_length)), pred_seq,
-                           count_mean[1,],
-                           #lower_50[1,], upper_50[1,],
-                           count_lower95[1,], count_upper95[1,]))  %>%
-  rename("species" = "V1",
-         "mean" = "V3",
-         #"lower_50" = "V4",
-         #"upper_50" = "V5",
-         "lower_95" = "V4",
-         "upper_95" = "V5") 
-
-df2 <- as.data.frame(cbind((rep(2, pred_length)), pred_seq,
-                           count_mean[2,],
-                           #lower_50[2,], upper_50[2,],
-                           count_lower95[2,], count_upper95[2,]))  %>%
-  rename("species" = "V1",
-         "mean" = "V3",
-         #"lower_50" = "V4",
-         #"upper_50" = "V5",
-         "lower_95" = "V4",
-         "upper_95" = "V5") 
-
-df3 <- as.data.frame(cbind((rep(3, pred_length)), pred_seq,
-                           count_mean[3,],
-                           #lower_50[3,], upper_50[3,],
-                           count_lower95[3,], count_upper95[3,]))  %>%
-  rename("species" = "V1",
-         "mean" = "V3",
-         #"lower_50" = "V4",
-         #"upper_50" = "V5",
-         "lower_95" = "V4",
-         "upper_95" = "V5") 
-
-df4 <- as.data.frame(cbind((rep(4, pred_length)), pred_seq,
-                           count_mean[4,],
-                           #lower_50[4,], upper_50[4,],
-                           count_lower95[4,], count_upper95[4,]))  %>%
-  rename("species" = "V1",
-         "mean" = "V3",
-         #"lower_50" = "V4",
-         #"upper_50" = "V5",
-         "lower_95" = "V4",
-         "upper_95" = "V5")
-
-df5 <- as.data.frame(cbind((rep(5, pred_length)), pred_seq,
-                           count_mean[5,],
-                           #lower_50[4,], upper_50[4,],
-                           count_lower95[5,], count_upper95[5,]))  %>%
-  rename("species" = "V1",
-         "mean" = "V3",
-         #"lower_50" = "V4",
-         #"upper_50" = "V5",
-         "lower_95" = "V4",
-         "upper_95" = "V5")
-
-new_df <- rbind(df1, df2, df3, df4, df5) 
-
-df <- df %>%
-  mutate(pred_seq = julian_scaled,
-         mean = as.numeric(n)) 
-
-library(RColorBrewer)
-my_palette_reduced <- brewer.pal(n_species, "Blues")
-
-p <- ggplot(data = new_df, aes(pred_seq, mean)) +
-  geom_line(data=df1, size=2) +
-  geom_ribbon(data=df1, aes(ymin=lower_95, ymax=upper_95, fill = as.factor(species)), alpha=0.8) +
-  geom_line(data=df2, size=2) +
-  geom_ribbon(data=df2, aes(ymin=lower_95, ymax=upper_95, fill = as.factor(species)), alpha=0.8) + 
-  geom_line(data=df3, size=2) +
-  geom_ribbon(data=df3, aes(ymin=lower_95, ymax=upper_95, fill = as.factor(species)), alpha=0.8) +  
-  geom_line(data=df4, size=2) +
-  geom_ribbon(data=df4, aes(ymin=lower_95, ymax=upper_95, fill = as.factor(species)), alpha=0.8) +  
-  xlim(c(-3, 3.5)) +
-  ylim(c(0, 600)) +
-  theme_bw() +
-  ylab("expected mean abundance per survey \n(with 10 and 90% quantiles)") +
-  xlab("julian date scaled") +
-  scale_fill_manual(name = "Species",
-                    labels=c("B. flavifrons",
-                             "B. impatiens",
-                             "B. melanopygus",
-                             "B. mixtus",
-                             "B. vosnesenskii"
-                             ),
-                    values=my_palette_reduced) +
-  theme(legend.position = c(0.15, 0.8),
-        legend.text=element_text(size=10),
-        axis.text.x = element_text(size = 18),
-        axis.text.y = element_text(size = 18, angle=45, vjust=-0.5),
-        axis.title.x = element_text(size=20),
-        axis.title.y = element_text(size = 20),
-        panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        panel.background = element_blank(), axis.line = element_line(colour = "black"))
-p

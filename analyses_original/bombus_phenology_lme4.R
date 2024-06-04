@@ -5,18 +5,15 @@ library(tidyverse)
 library(lme4)
 library(RColorBrewer)
 
-setwd("C:/Users/mplat/Documents/thesis")
-
 ## predictor center scaling function
 center_scale <- function(x) {
   (x - mean(x)) / sd(x)
 }
 
-table(df_orig$species)
 #------------------------------------------------------------------------------
 # initial data cleanup
 
-df_orig <- as.data.frame(read.csv("bombus_2022_2023_analyses_w_zero counts.csv"))
+df_orig <- as.data.frame(read.csv("./data/melissa_2022_2023_phenology_data.csv"))
 
 table(df_orig$species)
 table(df_orig$plant)
@@ -104,6 +101,7 @@ fit0 <- lme4::glmer(
     julian_scaled + julian_scaled_sq ,
   data = df,
   family = "poisson")
+
 Anova(model_name,type=3)
 
 summary(fit0)
