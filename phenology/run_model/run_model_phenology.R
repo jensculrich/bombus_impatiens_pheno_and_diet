@@ -21,9 +21,8 @@ unique_detections_by_species <- df %>%
   slice(1) %>%
   select(species, n)
 
-# IMPORTANT: enter names in alphabetical order
-species_names <- c("bom_fla", "bom_imp", "bom_mel", "bom_mix", "bom_vos")
 # how many species are we going to consider? Just the main 5 for now
+species_names <- c("bom_fla",  "bom_imp", "bom_mel", "bom_mix", "bom_vos")
 n_species = length(species_names)
 
 df_subset_with_counts <- subset(df, species %in% species_names) %>%
@@ -67,8 +66,7 @@ all_possible_counts <- as.data.frame(cbind(unique_site_dates, species_names_full
 df <- left_join(all_possible_counts, df_subset_with_counts) %>%
   # replace unobserved NA with 0
   mutate(n = replace_na(n, 0),
-         #species_factor = relevel(factor(species), ref = 'bom_imp'))
-         species_factor = as.factor(species))
+         species_factor = relevel(factor(species), ref = 'bom_imp'))
 
 #------------------------------------------------------------------------------
 # get unique species and sites
@@ -87,44 +85,45 @@ n_species <- length(unique(species <- df %>%
 # Prepare data for stan model
 
 # data to feed to the model
+# dummy_variables <- model.matrix(~ species_factor, data = df)
+X <- model.matrix(n ~ species_factor, data = df)
+
 N <- nrow(df) # number of pairs
-y <- df$n
+y <- df$n # outcomes (counts)
+n_species <- n_species # number of species
+n_survey_events <- N/n_species # for PPC
+julian_scaled <- df$julian_scaled
+julian_scaled_sq <- df$julian_scaled_sq
 n_sites <- n_sites
 site_names <- sites
 sites = as.numeric(as.factor(df$site)) # numeric site names
-n_species <- n_species
-species_names <- species
-species <- as.numeric((df$species_factor))
-years <- as.numeric(as.factor(df$year))
+years <- as.numeric(as.factor(df$year)) - 1
 n_years <- length(unique(years))
-julian_scaled <- df$julian_scaled
-julian_scaled_sq <- df$julian_scaled_sq
-n_survey_events <- N/n_species
+
+species_vector <- as.numeric((df$species_factor))
 
 stan_data <- c("N", "y", "n_survey_events",
+               "n_species", "X", "species_vector",
                "n_sites", "sites",
-               "n_species", "species",
                "n_years", "years",
                "julian_scaled",
                "julian_scaled_sq"
 )
 
 # Parameters monitored
-params <- c("beta0",
+params <- c("beta",
             "beta_julian",
             "beta_julian_sq",
-            "beta_species",
-            #"beta_year",
             "beta_site",
             "sigma_site",
+            "beta_year",
+            "sigma",
             "mean_y_rep_species",
-            "max_y_rep_species"#,
-            
-            #"sigma"
+            "max_y_rep_species"
 )
 
 # MCMC settings
-n_iterations <- 500
+n_iterations <- 4000
 n_thin <- 1
 n_burnin <- 0.5*n_iterations
 n_chains <- 4
@@ -135,20 +134,19 @@ n_cores <- n_chains
 # otherwise sometimes they have a hard time starting to sample
 inits <- lapply(1:n_chains, function(i)
   
-  list(beta0 = runif(1, -1, 1),
-       sigma_site = runif(1, 0, 1)
+  list(beta0 = runif(1, -1, 1)
   )
 )
 
 ## --------------------------------------------------
 ### Run model
 
-stan_model <- "./phenology/models/CopyOffinal_model_phenology.stan"
+stan_model <- "./phenology/models/final_model_phenology.stan"
 
 ## Call Stan from R
 stan_out <- stan(stan_model,
                  data = stan_data, 
-                 init = inits, 
+                 #init = inits, 
                  pars = params,
                  chains = n_chains, iter = n_iterations, 
                  warmup = n_burnin, thin = n_thin,
@@ -167,13 +165,9 @@ fit_summary <- rstan::summary(stan_out)
 
 # traceplot
 traceplot(stan_out, pars = c(
-  "beta0",
+  "beta",
   "beta_julian",
-  "beta_julian_sq",
-  "sigma_site",
-  "sigma_species",
-  "beta_year",
-  "sigma"
+  "beta_julian_sq"
 ))
 
 # pairs plot
@@ -213,7 +207,7 @@ W_species <- df %>%
   ungroup() %>%
   select(species_factor, W_mean_species, W_max_species)
 
-stan_fit_first_W_mean <- 19 # which row in the tracked parameters is the first W mean
+stan_fit_first_W_mean <- 32 # which row in the tracked parameters is the first W mean
 
 df_estimates <- data.frame(X = numeric(), 
                            Y = numeric(), 
@@ -236,7 +230,7 @@ for(i in 1:n_species){
   
 }
 
-labels=as.vector(W_species$species_factor)
+labels=species_names
 ylims = c(0,(max(df_estimates$upper_95)+5))
 end_point  = 0.5 + nrow(df_estimates) + nrow(df_estimates) - 1 #
 
@@ -274,7 +268,7 @@ for(i in 1:n_species){
 #------------------------------------------------------------------------------
 ## PPC for max detections
 
-stan_fit_first_W_max <- 24 # which row in the tracked parameters is the first W mean
+stan_fit_first_W_max <- 37 # which row in the tracked parameters is the first W mean
 
 df_estimates <- data.frame(X = numeric(), 
                            Y = numeric(), 
@@ -297,7 +291,7 @@ for(i in 1:n_species){
   
 }
 
-labels=as.vector(W_species$species_factor)
+labels=species_names
 ylims = c(0, #max(W_species$W_max_species) + 5)
           (max(df_estimates$upper_95)+5))
 end_point  = 0.5 + nrow(df_estimates) + nrow(df_estimates) - 1 #
