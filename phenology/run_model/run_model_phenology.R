@@ -23,7 +23,7 @@ unique_detections_by_species <- df %>%
 
 # IMPORTANT: enter names in alphabetical order
 species_names <- c("bom_fla", "bom_imp", "bom_mel", "bom_mix", "bom_vos")
-# how many species are we going to consider? Just the main 4 for now
+# how many species are we going to consider? Just the main 5 for now
 n_species = length(species_names)
 
 df_subset_with_counts <- subset(df, species %in% species_names) %>%
@@ -117,7 +117,11 @@ params <- c("beta0",
             "sigma_site",
             "beta_species",
             "sigma_species",
-            "beta_year",
+            #"beta_year",
+            #"mu_julian",
+            #"sigma_julian",
+            "mu_julian_sq",
+            "sigma_julian_sq",
             "mean_y_rep_species",
             "max_y_rep_species",
             
@@ -125,7 +129,7 @@ params <- c("beta0",
 )
 
 # MCMC settings
-n_iterations <- 4000
+n_iterations <- 500
 n_thin <- 1
 n_burnin <- 0.5*n_iterations
 n_chains <- 4
@@ -214,7 +218,7 @@ W_species <- df %>%
   ungroup() %>%
   select(species_factor, W_mean_species, W_max_species)
 
-stan_fit_first_W_mean <- 28 # which row in the tracked parameters is the first W mean
+stan_fit_first_W_mean <- 30 # which row in the tracked parameters is the first W mean
 
 df_estimates <- data.frame(X = numeric(), 
                            Y = numeric(), 
@@ -275,7 +279,7 @@ for(i in 1:n_species){
 #------------------------------------------------------------------------------
 ## PPC for max detections
 
-stan_fit_first_W_max <- 33 # which row in the tracked parameters is the first W mean
+stan_fit_first_W_max <- 35 # which row in the tracked parameters is the first W mean
 
 df_estimates <- data.frame(X = numeric(), 
                            Y = numeric(), 

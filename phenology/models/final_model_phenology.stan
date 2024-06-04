@@ -40,10 +40,14 @@ parameters {
   vector[n_species] beta_species; // species specific intercept for count outcomes
   real<lower=0> sigma_species; // variance in site intercepts
   
-  vector[n_years] beta_year; // effect of year (2022 versus 2023) on overall abundance
+  //vector[n_years] beta_year; // effect of year (2022 versus 2023) on overall abundance
   
   vector[n_species] beta_julian; // effect of julian date on abundance
-  vector[n_species] beta_julian_sq; // effect of julian date squared on abundance
+  //real mu_julian;
+  //real<lower=0> sigma_julian;
+  vector<upper=0>[n_species] beta_julian_sq; // effect of julian date squared on abundance
+  real mu_julian_sq;
+  real<lower=0> sigma_julian_sq;
   
   vector[N] epsilon; // overdispersion parameter
   vector<lower=0>[n_species] sigma; // species-specific variation in overdispersion
@@ -62,7 +66,7 @@ transformed parameters{
              beta0 + // a global intercept
              beta_site[sites[i]] + // a site specific intercept
              beta_species[species[i]] + // a species specific intercept
-             beta_year[years[i]] + // a year specific intercept
+             //beta_year[years[i]] + // a year specific intercept
              beta_julian[species[i]] * julian_scaled[i] + // an effect of julian date
              beta_julian_sq[species[i]] * julian_scaled_sq[i] + // an effect of julian date squared 
              epsilon[i] // plus a residual dispersion effect
@@ -85,13 +89,17 @@ model {
   // species effect
   beta_species ~ normal(0, sigma_species); // hierarchical prior, i.e., random effect
   sigma_species ~ normal(0, 2); // weakly informative prior
-  
+
   // year effect
-  beta_year ~ normal(0, 2); // no hierarchical prior (only two groups; hard to estimate among group variance)
+  //beta_year ~ normal(0, 2); // no hierarchical prior (only two groups; hard to estimate among group variance)
   
   // date effect
-  beta_julian ~ normal(0, 2); // weakly informative prior for effect of date
-  beta_julian_sq ~ normal(0, 2); // weakly informative prior for effect ofdate squared
+  beta_julian ~ normal(0, 1); // weakly informative prior for effect of date
+  //mu_julian ~ normal(0, 2);
+  //sigma_julian ~ normal(0, 0.5);
+  beta_julian_sq ~ normal(mu_julian_sq, sigma_julian_sq); // weakly informative prior for effect ofdate squared
+  mu_julian_sq ~ normal(0, 2);
+  sigma_julian_sq ~ normal(0, 0.5);
   
   // residual effect
   for(i in 1:N){ // a residual dispersion for each count

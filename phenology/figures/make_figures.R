@@ -26,7 +26,7 @@ unique_detections_by_species <- df %>%
 
 # IMPORTANT: enter names in alphabetical order
 species_names <- c("bom_fla", "bom_imp", "bom_mel", "bom_mix", "bom_vos")
-# how many species are we going to consider? Just the main 4 for now
+# how many species are we going to consider? Just the main 5 for now
 n_species = length(species_names)
 
 df_subset_with_counts <- subset(df, species %in% species_names) %>%
@@ -80,8 +80,8 @@ View(cbind(1:nrow(fit_summary$summary), fit_summary$summary)) # View to see whic
 
 # get original julian dates back
 pred_length <- 100 # divide the calendar year by some number of days
-lower_date <- 0
-upper_date <- 365
+lower_date <- 85
+upper_date <- 300
 original_julian <- seq(lower_date, upper_date, length.out = pred_length) # reasonable prediction range
 julian_pred <- (original_julian - mean(df$julian)) / sd(df$julian) # unscale the dates
 
@@ -103,7 +103,8 @@ for(i in 1:n_species){
             # species-specific julian date
             fit_summary$summary[2+(i-1),1] * julian_pred[j] +
             # species-specific julian date^2
-            fit_summary$summary[7+(i-1),1] * julian_pred[j]^2 
+            #fit_summary$summary[7+(i-1),1] * julian_pred[j]^2
+            (fit_summary$summary[7+(i-1),1] + fit_summary$summary[28,1]) * julian_pred[j]^2 
         )
       
       count_lower95[i,j] =
@@ -115,7 +116,8 @@ for(i in 1:n_species){
             # species-specific julian date
             fit_summary$summary[2+(i-1),4] * julian_pred[j] +
             # species-specific julian date^2
-            fit_summary$summary[7+(i-1),4] * julian_pred[j]^2 
+            #fit_summary$summary[7+(i-1),4] * julian_pred[j]^2 
+            (fit_summary$summary[7+(i-1),4] + fit_summary$summary[28,4]) * julian_pred[j]^2 
         )
       
       count_upper95[i,j] =
@@ -127,7 +129,8 @@ for(i in 1:n_species){
             # species-specific julian date
             fit_summary$summary[2+(i-1),8] * julian_pred[j] +
             # species-specific julian date^2
-            fit_summary$summary[7+(i-1),8] * julian_pred[j]^2 
+            #fit_summary$summary[7+(i-1),8] * julian_pred[j]^2 
+            (fit_summary$summary[7+(i-1),8] + fit_summary$summary[28,8]) * julian_pred[j]^2 
         )
       
   }
@@ -135,13 +138,13 @@ for(i in 1:n_species){
 
 
 test <- # intercept +
-  fit_summary$summary[1,8] +
+  fit_summary$summary[1,1] +
   # species-specific intercept
-  fit_summary$summary[22+(3-1),8] + 
+  fit_summary$summary[22+(3-1),1] + 
   # species-specific julian date
-  fit_summary$summary[2+(3-1),8] * julian_pred[1] +
+  fit_summary$summary[2+(3-1),1] * julian_pred[1] +
   # species-specific julian date^2
-  fit_summary$summary[7+(3-1),8] * julian_pred[1]^2 
+  fit_summary$summary[7+(3-1),1] * julian_pred[1]^2 
 
 # unite the means and 95% CI's with species number and julian date
 species <- rep(1:n_species, each=pred_length) # species number
@@ -162,15 +165,15 @@ new_df <- as.data.frame(cbind(species, julian_pred, rep(original_julian, n_speci
 
 # plotting palette
 library(RColorBrewer)
-my_palette_reduced <- brewer.pal(n_species, "Set1")
+my_palette_reduced <- brewer.pal(n_species, "Set2")
 
 # plot just the expected means (plot p)
 p <- ggplot(data = new_df, aes(julian, mean, fill=as.factor(species))) +
-  geom_line(size=2) +
   geom_ribbon(aes(
     ymin=lower_95, ymax=upper_95), alpha=0.8) +
+  #geom_line(size=2) +
   xlim(c(lower_date, upper_date)) +
-  ylim(c(0, 500)) +
+  ylim(c(0, 225)) +
   theme_bw() +
   ylab("abundance per survey \n(with 95% CI)") +
   xlab("julian date") +
