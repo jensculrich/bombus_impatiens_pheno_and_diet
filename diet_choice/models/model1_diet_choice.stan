@@ -7,21 +7,27 @@ data {
   
   int<lower=0> N; // number of species*site*surveys
   
-  int<lower=0> y[N]; // counts
+  int<lower=0> y[N]; // binary outcomes
   
-  //int<lower=1> n_species;  // number of species
-  //matrix[N,n_species]  X;  // species matrix
+  int<lower=1> n_species;  // number of species
+  matrix[N,n_species] X;  // species matrix
   
-  real prop_nvsv[N];
+  int<lower=1> n_sites;  // number of sites 
+  int<lower=1, upper=n_sites> sites[N];  // vector of site names 
+  
+  real prop_nvsv[N]; // proportion of plants that are invasive (on a given survey)
   
 }
 
 parameters {
   
-  real beta0;
-  //vector[n_species] beta;
+  vector[n_species] beta;
   
-  real beta_prop_nvsv;
+  // site random effect
+  vector[n_sites] beta_site; // site specific intercept for count outcomes
+  real<lower=0> sigma_site; // variance in site intercepts
+  
+  vector[n_species] beta_prop_nvsv;
   
 }
 
@@ -29,15 +35,15 @@ transformed parameters{
 
   // the linear predictor for the individual observations
   // poisson process "intensity" that underlies the counts
-  real p[N];
+  real theta[N];
 
   // Individual flower mean
   for(i in 1:N){
       
-      p[i] = inv_logit( // exponential link function
-             beta0 +
-             //X[i] * beta // species-specific intercepts
-             beta_prop_nvsv * prop_nvsv[i]
+      theta[i] = inv_logit( // exponential link function
+             X[i] * beta + // species-specific intercepts
+             beta_site[sites[i]] + // a site-effect on intercepts
+             (X[i] * beta_prop_nvsv) * prop_nvsv[i] // a species-specific effect of increasing invasive plants
              )
             ; // end lambda
   }
@@ -48,14 +54,18 @@ model {
   
   // PRIORS
   
-  // species-specific intercept
-  beta0 ~ normal(0, 2);
-  //beta ~ normal(0, 2); // weakly informative prior for global intercept
+  // species-specific intercepts
+  beta ~ normal(0, 2);
   
+  // site random effect
+  beta_site ~ normal(0, sigma_site); // hierarchical prior, i.e., random effect
+  sigma_site ~ normal(0, 1); // weakly informative prior
+  
+  // species-specific effects of increasing prop. of invasive plants
   beta_prop_nvsv ~ normal(0, 2);
   
   // LIKELIHOOD
-  y ~ bernoulli_logit(p); // y (count) is the outcome of a bernoulli trial w/ probability p
+  y ~ bernoulli(theta); // y (count) is the outcome of a bernoulli trial w/ probability p
 
 }
 
@@ -68,11 +78,12 @@ generated quantities {
   
   // define abundances to predict
   int<lower=0> y_rep[N]; // simulated abundance outcomes
+  int<lower=0> sum_y_rep; // simulated abundance outcomes
   
   // generating posterior predictive distribution
   // Predict invasive interaction for each instance,
   for(i in 1:N) { // loop across all plants
-    y_rep[i] = bernoulli_logit_rng(p[i]);
+    y_rep[i] = bernoulli_rng(theta[i]);
   } 
   
   sum_y_rep = sum(y_rep);

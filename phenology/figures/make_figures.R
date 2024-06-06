@@ -252,12 +252,12 @@ p <- ggplot(data = new_df, aes(julian, mean, fill=as.factor(species_new_ordered)
   #geom_ribbon(aes(
     #ymin=lower_50, ymax=upper_50), alpha=0.5) +
   geom_ribbon(aes(
-    ymin=lower_95, ymax=upper_95), alpha=0.7) +
+    ymin=lower_95, ymax=upper_95), alpha=0.5) +
   #geom_line(size=2) +
   xlim(c(lower_date, upper_date)) +
   theme_bw() +
-  ylab("expected abundance \n(with 95% BCI)") +
-  xlab("julian date") +
+  ylab("Expected abundance \n(95% BCI)") +
+  xlab("Julian date") +
   scale_fill_manual(name = "Species",
                     labels=c("B. impatiens",
                              "B. mixtus",
@@ -368,3 +368,48 @@ s <- s +
 
 
 s
+
+#-------------------------------------------------------------------------------
+## make nice tables of param estimates
+
+phenology_table_data1 <- data.frame(
+  Term = c("(Intercept)", "B. flavifrons", "B. mixtus", "B. melanopygus", "B. vosnesenskii",
+           "(Sigma)", "B. flavifrons", "B. mixtus", "B. melanopygus", "B. vosnesenskii", "Year\n(2023 v. 2022)"),
+  'mean' = c(fit_summary$summary[1,1], fit_summary$summary[2,1], 
+             fit_summary$summary[3,1], fit_summary$summary[4,1], fit_summary$summary[5,1],
+             fit_summary$summary[27,1], fit_summary$summary[28,1], 
+             fit_summary$summary[29,1], fit_summary$summary[30,1], fit_summary$summary[31,1],
+             fit_summary$summary[26,1]),
+  'lower 95 BCI' = c(fit_summary$summary[1,4], fit_summary$summary[2,4], 
+                     fit_summary$summary[3,4], fit_summary$summary[4,4], fit_summary$summary[5,4],
+                     fit_summary$summary[27,4], fit_summary$summary[28,4], 
+                     fit_summary$summary[29,4], fit_summary$summary[30,4], fit_summary$summary[31,4],
+                     fit_summary$summary[26,4]),
+  'upper 95 BCI' = c(fit_summary$summary[1,8], fit_summary$summary[2,8], 
+                     fit_summary$summary[3,8], fit_summary$summary[4,8], fit_summary$summary[5,8],
+                     fit_summary$summary[27,8], fit_summary$summary[28,8], 
+                     fit_summary$summary[29,8], fit_summary$summary[30,8], fit_summary$summary[31,8],
+                     fit_summary$summary[26,8])
+)
+print(phenology_table_data1)
+nice_table(phenology_table_data1)
+
+
+phenology_table_data2 <- data.frame(
+  Term = c("(Julian date)", "B. flavifrons", "B. mixtus", "B. melanopygus", "B. vosnesenskii",
+           "(Julian date)^2", "B. flavifrons", "B. mixtus", "B. melanopygus", "B. vosnesenskii"),
+  'mean' = c(fit_summary$summary[6,1], fit_summary$summary[7,1], 
+             fit_summary$summary[8,1], fit_summary$summary[9,1], fit_summary$summary[10,1],
+             fit_summary$summary[11,1], fit_summary$summary[12,1], 
+             fit_summary$summary[13,1], fit_summary$summary[14,1], fit_summary$summary[15,1]),
+  'lower 95 BCI' = c(fit_summary$summary[6,4], fit_summary$summary[7,4], 
+                     fit_summary$summary[8,4], fit_summary$summary[9,4], fit_summary$summary[10,4],
+                     fit_summary$summary[11,4], fit_summary$summary[12,4], 
+                     fit_summary$summary[13,4], fit_summary$summary[14,4], fit_summary$summary[15,4]),
+  'upper 95 BCI' = c(fit_summary$summary[6,8], fit_summary$summary[7,8], 
+                     fit_summary$summary[8,8], fit_summary$summary[9,8], fit_summary$summary[10,8],
+                     fit_summary$summary[11,8], fit_summary$summary[12,8], 
+                     fit_summary$summary[13,8], fit_summary$summary[14,8], fit_summary$summary[15,8])
+)
+print(phenology_table_data2)
+nice_table(phenology_table_data2)

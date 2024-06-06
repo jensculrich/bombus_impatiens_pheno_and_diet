@@ -82,6 +82,7 @@ model {
   
   // date effect
   beta_julian ~ normal(0, 2); // weakly informative prior for effect of date
+  
   beta_julian_sq[1] ~ normal(0, 2); // weakly informative prior for effect of date squared
   beta_julian_sq[2] ~ normal(0, 1); // weakly informative prior for effect of date squared
   beta_julian_sq[3] ~ normal(0, 0.25); // weakly informative prior for effect of date squared

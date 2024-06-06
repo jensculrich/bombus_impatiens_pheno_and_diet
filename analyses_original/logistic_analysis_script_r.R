@@ -15,8 +15,11 @@ setwd("C:/Users/mplat/Documents/thesis")
 #  Logistic regression 
 #------------------------------------
 
-log_reg <- read.csv("log_reg_analyses_file.csv")
-pref_data <- log_reg %>% filter(species %in% c('bom_fla', 'bom_mel', 'bom_mix', 'bom_vos', 'bom_imp'))
+log_reg <- read.csv("./data/melissa_2022_2023_logistic_analyses_file.csv")
+pref_data <- log_reg %>% filter(species %in% c('bom_fla', 'bom_mel', 'bom_mix', 'bom_vos', 'bom_imp')) %>%
+  
+  # currently there is NA data? Why?
+  filter(!is.na(proportion_invasive))
 
 # Assuming 'species', 'site', and 'date' are categorical variables, you need to convert them to factors
 pref_data$species <- as.factor(pref_data$species)
@@ -27,10 +30,30 @@ pref_data$invasive_interaction <- as.numeric(pref_data$invasive_interaction)
 
 pref_data$species <- relevel(pref_data$species, ref = "bom_imp")
 
-# Logistic regression models
-#fit0 <- glmer(invasive_interaction ~ proportion_invasive + (1|site), data = pref_data, family = binomial)
-
 fit2 <- glmer(invasive_interaction ~ proportion_invasive + species + proportion_invasive*species + (1|site), data = pref_data, family = binomial)
+
+
+#------------------------------------------------------------------------------
+# Scale the proportion of invasive plants
+# To get scaled dates we need to have just one event per site visit
+
+pref_data <- pref_data %>%
+  group_by(site, month_day) %>%
+  mutate(survey = cur_group_id()) %>%
+  ungroup()
+
+pref_data <- pref_data %>%
+  group_by(site, month_day) %>%
+  slice(1) %>%
+  ungroup() %>%
+  mutate(scaled_prop_nvsv = center_scale(proportion_invasive)) %>%
+  select(survey, scaled_prop_nvsv) %>%
+  left_join(pref_data, ., by="survey")
+
+# Logistic regression models
+#fit0 <- glmer(invasive_interaction ~ scaled_prop_nvsv + (1|site), data = pref_data, family = binomial)
+
+fit2 <- glmer(invasive_interaction ~ scaled_prop_nvsv + species + scaled_prop_nvsv*species + (1|site), data = pref_data, family = binomial)
 
 # Print the summary of the model
 #summary(fit0)

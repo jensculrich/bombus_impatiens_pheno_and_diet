@@ -21,9 +21,7 @@ pref_data$invasive_interaction <- as.numeric(pref_data$invasive_interaction)
 
 pref_data$species <- relevel(pref_data$species, ref = "bom_imp")
 
-fit2 <- glmer(invasive_interaction ~ 
-                proportion_invasive + species + proportion_invasive*species + (1|site), 
-              data = pref_data, family = binomial)
+
 
 #------------------------------------------------------------------------------
 # Scale the proportion of invasive plants
@@ -43,31 +41,56 @@ pref_data <- pref_data %>%
   left_join(pref_data, ., by="survey")
 
 #------------------------------------------------------------------------------
+# GLM fit by maximum likelihood or with canned bayesian regression
+# this formula is essentially the same as I specify in the custom model
+
+fit2 <- glmer(invasive_interaction ~ 
+                scaled_prop_nvsv + species + scaled_prop_nvsv*species + (1|site), 
+              data = pref_data, family = binomial)
+
+summary(fit2)
+
+fit1 <- rstanarm::stan_glmer(data = pref_data, 
+                             invasive_interaction ~ 
+                               scaled_prop_nvsv + species + 
+                               scaled_prop_nvsv*species + (1|site),
+                                 family = "binomial")
+
+summary(fit1)
+
+rstanarm::pp_check(fit1)
+rstanarm::pp_check(fit1, plotfun = "stat_grouped", group = "species")
+rstanarm::pp_check(fit1, plotfun = "stat_grouped",  stat = "max", group = "species")
+
+#------------------------------------------------------------------------------
 # Prepare data for stan model
 
 # data to feed to the model
 # dummy_variables <- model.matrix(~ species_factor, data = df)
 X <- model.matrix(invasive_interaction ~ species, data = pref_data)
 n_species <- length(unique(pref_data$species))
-
+sites <- as.numeric(as.factor(pref_data$site))
+n_sites <- length(unique(pref_data$site))
 N <- nrow(pref_data) # number of pairs
 y <- pref_data$invasive_interaction # outcomes (counts)
 prop_nvsv <- pref_data$scaled_prop_nvsv
 
-
 stan_data <- c("N", "y", 
                "X", "n_species",
+               "sites", "n_sites",
                "prop_nvsv"
 )
 
 # Parameters monitored
 params <- c("beta",
             "beta_prop_nvsv",
+            "beta_site",
+            "sigma_site",
             "sum_y_rep"
 )
 
 # MCMC settings
-n_iterations <- 500
+n_iterations <- 4000
 n_thin <- 1
 n_burnin <- 0.5*n_iterations
 n_chains <- 4
@@ -105,6 +128,21 @@ saveRDS(stan_out, "./diet_choice/model_outputs/stan_out_diet_choice.RDS")
 fit_summary <- rstan::summary(stan_out)
 
 ## --------------------------------------------------
+### Simple diagnostic plots
+
+# traceplot
+traceplot(stan_out, pars = c(
+  "beta",
+  "beta_prop_nvsv",
+  "sigma_site"
+))
+
+# pairs plot
+pairs(stan_out, pars = c(
+  "beta"
+))
+
+## --------------------------------------------------
 # posterior predictive check
 
 fit_summary <- rstan::summary(stan_out)
@@ -118,19 +156,9 @@ c_mid_highlight <- c("#A25050")
 c_dark <- c("#8F2727")
 c_dark_highlight <- c("#7C0000")
 
+(W_overall <- sum(pref_data$invasive_interaction))
 
-W_overall <- sum(pref_data$invasive_interaction)
-
-# Summarize counts by species -> to get W_mean and W_max per species
-W_species <- pref_data %>%
-  group_by(species) %>%
-  mutate(W_mean_species = mean(proportion_invasive),
-         W_max_species = max(proportion_invasive)) %>%
-  slice(1) %>%
-  ungroup() %>%
-  select(species, W_mean_species, W_max_species)
-
-stan_fit_first_W_mean <- 32 # which row in the tracked parameters is the first W mean
+stan_fit_first_W_mean <- 21 # which row in the tracked parameters is the first W mean
 
 df_estimates <- data.frame(X = numeric(), 
                            Y = numeric(), 
@@ -140,7 +168,7 @@ df_estimates <- data.frame(X = numeric(),
                            upper_50 = numeric()
 ) 
 
-for(i in 1:n_species){
+for(i in 1:length(W_overall)){
   
   row <- c((i - 1), 
            fit_summary$summary[(stan_fit_first_W_mean+(i-1)),1],
@@ -153,27 +181,27 @@ for(i in 1:n_species){
   
 }
 
-labels=species_names
-ylims = c(0,(max(df_estimates$upper_95)+5))
+labels=""
+ylims = c((min(df_estimates$lower_95)-100),(max(df_estimates$upper_95)+100))
 end_point  = 0.5 + nrow(df_estimates) + nrow(df_estimates) - 1 #
 
-par(mar = c(9,4,1,2))
+par(mar = c(6,4,3,2))
 plot(1, type="n",
-     xlim=c(-0.5, n_species - 1 + 0.5), 
+     xlim=c(-0.5, 0.5), 
      xlab="",
      xaxt = "n",
      ylim=ylims, 
      ylab="50% and 95% Marginal Posterior Quantiles",
-     main="Mean Detections vs. Model Expectations of Mean Detections")
+     main="Interactions with invasive plants vs.\nmodel expectations of interactions with inv. plants")
 
 #axis(1, at=start:(start+n), labels=labels, las = 2, cex.axis=.75)
-text(seq(0, n_species - 1, by = 1), par("usr")[3]-0.25, 
+text(seq(0, 1 - 1, by = 1), par("usr")[3]-0.25, 
      srt = 60, adj = 1, xpd = TRUE,
      labels = labels, cex = 1)
 
-for(i in 1:n_species){
+for(i in 1:1){
   sliced <- df_estimates[i,]
-  W_sliced <- W_species[i, 2]
+  W_sliced <- W_overall
   
   rect(xleft = (sliced$X-0.35), xright=(sliced$X+0.35), 
        ytop = sliced$lower_95, ybottom = sliced$upper_95,
@@ -187,3 +215,4 @@ for(i in 1:n_species){
   
   points(x=sliced$X, y=W_sliced, pch=1)
 }
+
