@@ -81,13 +81,13 @@ model {
   beta_year ~ normal(0, 1);
   
   // date effect
-  beta_julian ~ normal(0, 2); // weakly informative prior for effect of date
+  beta_julian ~ normal(0, 2); // weakly informative prior for effect of date (for all species)
   
-  beta_julian_sq[1] ~ normal(0, 2); // weakly informative prior for effect of date squared
-  beta_julian_sq[2] ~ normal(0, 1); // weakly informative prior for effect of date squared
-  beta_julian_sq[3] ~ normal(0, 0.25); // weakly informative prior for effect of date squared
-  beta_julian_sq[4] ~ normal(0, 1); // weakly informative prior for effect of date squared
-  beta_julian_sq[5] ~ normal(0, 1); // weakly informative prior for effect of date squared
+  beta_julian_sq[1] ~ normal(0, 2); // weakly informative prior for effect of date squared (for baseline species)
+  beta_julian_sq[2] ~ normal(0, 1); // weakly informative prior for effect of date squared (for species 2)
+  beta_julian_sq[3] ~ normal(0, 0.25); // more informative prior for effect of date squared (for species 3)
+  beta_julian_sq[4] ~ normal(0, 1); // weakly informative prior for effect of date squared (for species 4)
+  beta_julian_sq[5] ~ normal(0, 1); // weakly informative prior for effect of date squared (for species 5)
   
   // residual effect
   for(i in 1:N){ // a residual dispersion for each count
