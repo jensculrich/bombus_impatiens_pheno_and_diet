@@ -125,6 +125,7 @@ stan_out <- stan(stan_model,
 print(stan_out, digits = 3)
 
 saveRDS(stan_out, "./diet_choice/model_outputs/stan_out_diet_choice.RDS")
+stan_out <- readRDS("./diet_choice/model_outputs/stan_out_diet_choice.RDS")
 fit_summary <- rstan::summary(stan_out)
 
 ## --------------------------------------------------

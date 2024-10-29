@@ -158,6 +158,8 @@ stan_out <- stan(stan_model,
 print(stan_out, digits = 3)
 
 saveRDS(stan_out, "./phenology/model_outputs/stan_out_phenology.RDS")
+
+stan_out <- readRDS("./phenology/model_outputs/stan_out_phenology.RDS")
 fit_summary <- rstan::summary(stan_out)
 
 ## --------------------------------------------------

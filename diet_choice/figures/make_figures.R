@@ -212,7 +212,7 @@ library(RColorBrewer)
 #my_palette <- brewer.pal(5, "Blues")
 #my_palette[1] <- "#7C0000"
 
-my_palette <- hcl.colors(5, "Inferno")
+my_palette <- hcl.colors(5, "Zissou 1")
 
 # plot just the expected means (plot p)
 p <- ggplot(data = new_df, aes(nvsv_pred, mean, fill=as.factor(species_new_ordered))) +
@@ -233,8 +233,8 @@ p <- ggplot(data = new_df, aes(nvsv_pred, mean, fill=as.factor(species_new_order
                      breaks = c(-0.5, 0, 0.5, 1, 1.5, 2),
                      labels = signif(x = c(-0.5, 0, 0.5, 1, 1.5, 2), digits=2)) +
   theme_bw() +
-  ylab("Prob(interacting with invasive plant)\n(50% BCI)") +
-  xlab("Proportion of invasive species in the plant community\n(z-score scaled)") +
+  ylab("Prob(choosing an invasive plant)") +
+  xlab("Proportional availability of invasive plants\n(z-score scaled)") +
   scale_fill_manual(name = "Species",
                     labels=c("B. impatiens",
                              "B. mixtus",

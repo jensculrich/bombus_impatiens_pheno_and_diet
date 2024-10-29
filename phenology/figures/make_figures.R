@@ -244,7 +244,7 @@ library(RColorBrewer)
 #my_palette <- brewer.pal(5, "Blues")
 #my_palette[1] <- "#7C0000"
   
-my_palette <- hcl.colors(5, "Inferno")
+my_palette <- hcl.colors(5, "Zissou 1")
 
 # plot just the expected means (plot p)
 p <- ggplot(data = new_df, aes(julian, mean, fill=as.factor(species_new_ordered))) +
@@ -256,7 +256,7 @@ p <- ggplot(data = new_df, aes(julian, mean, fill=as.factor(species_new_ordered)
   #geom_line(size=2) +
   xlim(c(lower_date, upper_date)) +
   theme_bw() +
-  ylab("Expected abundance \n(95% BCI)") +
+  ylab("Expected abundance") +
   xlab("Julian date") +
   scale_fill_manual(name = "Species",
                     labels=c("B. impatiens",

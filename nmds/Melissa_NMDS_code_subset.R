@@ -64,7 +64,7 @@ points(mini.mds.fig,"sites",pch=19, col="orange",
 
 ## redo with shared colour palette for other figures 
 library(RColorBrewer)
-my_palette <- hcl.colors(5, "Inferno")
+my_palette <- hcl.colors(5, "Zissou 1")
 
 mini.mds.fig <- ordiplot(mini.comm.bc.mds, type = "none",xlim=c(-2,2),ylim=c(-2,2))
 # plot just the samples, colour by Species, pch=19 means plot a circle
@@ -215,3 +215,4 @@ plot(comm.bc.clust, ylab = "Bray-Curtis dissimilarity")
 #the species of bee
 
 adonis2(comm.bc.dist ~ metadata$Species, method = "bray")
+
