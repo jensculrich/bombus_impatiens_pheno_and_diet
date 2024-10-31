@@ -78,7 +78,7 @@ model {
   sigma_site ~ normal(0, 2); // weakly informative prior
   
   // year effect
-  beta_year ~ normal(0, 1);
+  beta_year ~ normal(0, 2);
   
   // date effect
   beta_julian ~ normal(0, 2); // weakly informative prior for effect of date (for all species)
