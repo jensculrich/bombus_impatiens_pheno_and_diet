@@ -7,7 +7,7 @@ data {
   
   int<lower=0> N; // number of species*site*surveys
   
-  int<lower=0> y[N]; // binary outcomes
+  int<lower=0> y[N]; // binary outcomes (1 = interact with invasive plant)
   
   int<lower=1> n_species;  // number of species
   matrix[N,n_species] X;  // species matrix
@@ -21,20 +21,22 @@ data {
 
 parameters {
   
-  vector[n_species] beta;
+  vector[n_species] beta; // species specific rate of interaction w invasive plants when
+    // invasive plants are at an average proportion in the plant community
+    
+  vector[n_species] beta_prop_nvsv; // species specific effect of increasing prop. invasvive plants
   
   // site random effect
   vector[n_sites] beta_site; // site specific intercept for count outcomes
   real<lower=0> sigma_site; // variance in site intercepts
-  
-  vector[n_species] beta_prop_nvsv;
+
   
 }
 
 transformed parameters{
 
   // the linear predictor for the individual observations
-  // poisson process "intensity" that underlies the counts
+  // that underlies the rate of choosing invasive plants
   real theta[N];
 
   // Individual flower mean
