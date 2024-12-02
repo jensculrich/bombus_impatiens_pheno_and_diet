@@ -108,20 +108,22 @@ test$Species <- factor(test$Species,
 labs <- c("B. impatiens", "B. mixtus", "B. flavifrons", "B. vosnesenskii", "B. melanopygus")
 
 p <- gg_ordiplot(mini.comm.bc.mds, 
-            groups = test$Species, pt.size = 3, size = 3, 
+            groups = test$Species, pt.size = 3, #size = 3, 
             kind = "sd", conf = 0.95)
 plot <- p$plot
 plot + theme_light() +
-  scale_y_continuous(limits = c(-2, 2)) +
+  scale_x_continuous(limits = c(-2.5, 2.5)) +
+  scale_y_continuous(limits = c(-2.5, 2.5)) +
   scale_color_manual(name="Species", 
                      values=my_palette, 
                      labels = labs) +
-  theme(axis.text.x = element_text(size = 12),
-        axis.text.y = element_text(size = 12),
+  theme_classic() +
+  theme(axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16),
         axis.title.x = element_text(size=16),
         axis.title.y = element_text(size = 16),
-        legend.text=element_text(size=12),
-        legend.title=element_text(size=14),
+        legend.text=element_text(size=14),
+        legend.title=element_text(size=16),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), 
         axis.line = element_line(colour = "black")

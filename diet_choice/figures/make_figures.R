@@ -253,12 +253,12 @@ p <- ggplot(data = new_df, aes(nvsv_pred, mean, fill=as.factor(species_new_order
                      breaks = c(0, 0.5, 1),
                      labels = scales::percent) +
   theme(legend.position = c(0.15, 0.7),
-        legend.title=element_text(size=18),
-        legend.text=element_text(size=16),
-        axis.text.x = element_text(size = 18),
-        axis.text.y = element_text(size = 18, angle=45, vjust=-0.5),
-        axis.title.x = element_text(size = 18),
-        axis.title.y = element_text(size = 18),
+        legend.title=element_text(size=16),
+        legend.text=element_text(size=14),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16, angle=45, vjust=-0.5),
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 p
@@ -358,10 +358,10 @@ df_estimates_eco2 <- df_estimates_eco[5:8,]
    guides(color = guide_legend(title = "")) +
    geom_hline(yintercept = 0, lty = "dashed") +
    theme(legend.text=element_text(size=10),
-         axis.text.x = element_text(size = 18),
-         axis.text.y = element_text(size = 18, angle=0, vjust=0.5),
-         axis.title.x = element_text(size = 18),
-         axis.title.y = element_text(size = 18),
+         axis.text.x = element_text(size = 16),
+         axis.text.y = element_text(size = 16, angle=0, vjust=0.5),
+         axis.title.x = element_text(size = 16),
+         axis.title.y = element_text(size = 16),
          panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
          panel.background = element_blank(), axis.line = element_line(colour = "black")) +
    coord_flip()
@@ -393,10 +393,10 @@ s
     guides(color = guide_legend(title = "")) +
     geom_hline(yintercept = 0, lty = "dashed") +
     theme(legend.text=element_text(size=10),
-          axis.text.x = element_text(size = 18),
-          axis.text.y = element_text(size = 18, angle=0, vjust=0.5),
-          axis.title.x = element_text(size = 18),
-          axis.title.y = element_text(size = 18),
+          axis.text.x = element_text(size = 16),
+          axis.text.y = element_text(size = 16, angle=0, vjust=0.5),
+          axis.title.x = element_text(size = 16),
+          axis.title.y = element_text(size = 16),
           panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
           panel.background = element_blank(), axis.line = element_line(colour = "black")) +
     coord_flip()
@@ -412,6 +412,13 @@ t <- t +
 
 
 t
+
+
+#gridExtra::grid.arrange(p, s, ncol=1)
+cowplot::plot_grid(p, s, t,
+                   labels = c("a)", "b)", "c)"), label_size = 16,
+                   hjust = 0,
+                   nrow = 3, rel_heights = c(1/2, 1/4, 1/4))
 
 #------------------------------------------------------------------------------
 # Create tables with model data

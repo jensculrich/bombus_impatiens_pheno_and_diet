@@ -266,13 +266,13 @@ p <- ggplot(data = new_df, aes(julian, mean, fill=as.factor(species_new_ordered)
                              "B. melanopygus"),
                     values = my_palette) +
   scale_y_continuous(limits = c(0, 10), breaks = c(0, 5, 10)) +
-  theme(legend.position = c(0.15, 0.8),
-        legend.title=element_text(size=18),
-        legend.text=element_text(size=16),
-        axis.text.x = element_text(size = 18),
-        axis.text.y = element_text(size = 18, angle=45, vjust=-0.5),
-        axis.title.x = element_text(size = 20),
-        axis.title.y = element_text(size = 20),
+  theme(legend.position = c(0.15, 0.7),
+        legend.title=element_text(size=16),
+        legend.text=element_text(size=14),
+        axis.text.x = element_text(size = 16),
+        axis.text.y = element_text(size = 16, angle=45, vjust=-0.5),
+        axis.title.x = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
         panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
         panel.background = element_blank(), axis.line = element_line(colour = "black"))
 p
@@ -349,10 +349,10 @@ df_estimates_eco$X_eco <- as.factor(df_estimates_eco$X_eco)
    guides(color = guide_legend(title = "")) +
    geom_hline(yintercept = 0, lty = "dashed") +
    theme(legend.text=element_text(size=10),
-         axis.text.x = element_text(size = 18),
-         axis.text.y = element_text(size = 18, angle=0, vjust=0.5),
-         axis.title.x = element_text(size = 18),
-         axis.title.y = element_text(size = 18),
+         axis.text.x = element_text(size = 16),
+         axis.text.y = element_text(size = 16, angle=0, vjust=0.5),
+         axis.title.x = element_text(size = 16),
+         axis.title.y = element_text(size = 16),
          panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
          panel.background = element_blank(), axis.line = element_line(colour = "black")) +
    coord_flip()
@@ -368,6 +368,12 @@ s <- s +
 
 
 s
+
+#gridExtra::grid.arrange(p, s, ncol=1)
+cowplot::plot_grid(p, s, 
+                   labels = c("a)", "b)"), label_size = 16,
+                   hjust = 0,
+                   nrow = 2, rel_heights = c(2/3, 1/3))
 
 #-------------------------------------------------------------------------------
 ## make nice tables of param estimates
